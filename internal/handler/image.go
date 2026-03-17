@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"context"
 	"crypto/sha256"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/at/smartcdn/internal/cache"
 	"github.com/at/smartcdn/internal/device"
@@ -93,9 +95,11 @@ func (h *ImageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Cache the result asynchronously
+	// Cache the result asynchronously with a detached context
 	go func() {
-		if err := h.cache.Set(r.Context(), key, processed, h.cache.DefaultTTL()); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := h.cache.Set(ctx, key, processed, h.cache.DefaultTTL()); err != nil {
 			slog.Error("cache set error", "key", key, "error", err)
 		}
 	}()
