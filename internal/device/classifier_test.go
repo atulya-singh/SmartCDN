@@ -4,12 +4,12 @@ import "testing"
 
 func TestClassify(t *testing.T) {
 	tests := []struct {
-		name          string
-		userAgent     string
-		wantClass     DeviceClass
-		wantMaxWidth  int
-		wantQuality   int
-		wantFormat    string
+		name         string
+		userAgent    string
+		wantClass    DeviceClass
+		wantMaxWidth int
+		wantQuality  int
+		wantFormat   string
 	}{
 		{
 			name:         "iPhone Safari",
