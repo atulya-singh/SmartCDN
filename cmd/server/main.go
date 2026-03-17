@@ -12,6 +12,7 @@ import (
 
 	"github.com/at/smartcdn/internal/config"
 	"github.com/at/smartcdn/internal/handler"
+	"github.com/at/smartcdn/internal/storage"
 )
 
 func main() {
@@ -33,8 +34,15 @@ func main() {
 
 	startTime := time.Now()
 
+	store, err := storage.NewStorage(context.Background(), cfg)
+	if err != nil {
+		slog.Error("failed to initialize storage", "error", err)
+		os.Exit(1)
+	}
+
 	mux := http.NewServeMux()
 	mux.Handle("GET /health", handler.NewHealthHandler(startTime))
+	mux.Handle("POST /upload", handler.NewUploadHandler(store))
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
