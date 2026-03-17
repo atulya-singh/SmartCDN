@@ -13,8 +13,10 @@ import (
 	"github.com/at/smartcdn/internal/cache"
 	"github.com/at/smartcdn/internal/config"
 	"github.com/at/smartcdn/internal/handler"
+	"github.com/at/smartcdn/internal/middleware"
 	"github.com/at/smartcdn/internal/processor"
 	"github.com/at/smartcdn/internal/storage"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -49,10 +51,13 @@ func main() {
 	mux.Handle("GET /health", handler.NewHealthHandler(startTime))
 	mux.Handle("POST /upload", handler.NewUploadHandler(store))
 	mux.Handle("GET /img/{id}", handler.NewImageHandler(store, imgCache, proc))
+	mux.Handle("GET /metrics", promhttp.Handler())
+
+	wrapped := middleware.Logging(middleware.Metrics(mux))
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
-		Handler:      mux,
+		Handler:      wrapped,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
