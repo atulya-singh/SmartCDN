@@ -10,8 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/at/smartcdn/internal/cache"
 	"github.com/at/smartcdn/internal/config"
 	"github.com/at/smartcdn/internal/handler"
+	"github.com/at/smartcdn/internal/processor"
 	"github.com/at/smartcdn/internal/storage"
 )
 
@@ -40,9 +42,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	imgCache := cache.NewCache(cfg)
+	proc := processor.NewProcessor()
+
 	mux := http.NewServeMux()
 	mux.Handle("GET /health", handler.NewHealthHandler(startTime))
 	mux.Handle("POST /upload", handler.NewUploadHandler(store))
+	mux.Handle("GET /img/{id}", handler.NewImageHandler(store, imgCache, proc))
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
