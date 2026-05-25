@@ -13,6 +13,9 @@ func testdataPath(name string) string {
 }
 
 func TestTransform_ResizeToWebP(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping: requires libvips")
+	}
 	input, err := os.ReadFile(testdataPath("test_100x100.jpg"))
 	if err != nil {
 		t.Fatalf("failed to read test fixture: %v", err)
@@ -43,6 +46,9 @@ func TestTransform_ResizeToWebP(t *testing.T) {
 }
 
 func TestTransform_NoUpscale(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping: requires libvips")
+	}
 	input, err := os.ReadFile(testdataPath("test_100x100.jpg"))
 	if err != nil {
 		t.Fatalf("failed to read test fixture: %v", err)
@@ -65,6 +71,9 @@ func TestTransform_NoUpscale(t *testing.T) {
 }
 
 func TestTransform_ZeroInput(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping: requires libvips")
+	}
 	proc := NewProcessor()
 	_, err := proc.Transform([]byte{}, TransformOptions{
 		Width:   100,
@@ -77,6 +86,9 @@ func TestTransform_ZeroInput(t *testing.T) {
 }
 
 func TestTransform_UnsupportedFormat(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping: requires libvips")
+	}
 	proc := NewProcessor()
 	_, err := proc.Transform([]byte("not an image"), TransformOptions{
 		Width:   100,
