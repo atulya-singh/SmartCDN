@@ -57,7 +57,7 @@ func testServer(t *testing.T) *httptest.Server {
 	mux := http.NewServeMux()
 	mux.Handle("POST /upload", handler.NewUploadHandler(store))
 	mux.Handle("GET /img/{id}", handler.NewImageHandler(store, imgCache, proc))
-	mux.Handle("GET /health", handler.NewHealthHandler(time.Now()))
+	mux.Handle("GET /health", handler.NewHealthHandler(time.Now(), nil))
 
 	return httptest.NewServer(mux)
 }

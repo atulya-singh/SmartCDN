@@ -64,6 +64,12 @@ func (s *Storage) Upload(ctx context.Context, filename string, data io.Reader, c
 	return id, nil
 }
 
+// Ping checks MinIO connectivity by listing buckets.
+func (s *Storage) Ping(ctx context.Context) error {
+	_, err := s.client.ListBuckets(ctx)
+	return err
+}
+
 func (s *Storage) Download(ctx context.Context, imageID string) ([]byte, string, error) {
 	// List objects with the imageID prefix to find the stored file.
 	objectCh := s.client.ListObjects(ctx, s.bucket, minio.ListObjectsOptions{

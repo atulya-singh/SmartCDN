@@ -60,3 +60,8 @@ func (c *Cache) Set(ctx context.Context, key string, data []byte, ttl time.Durat
 func (c *Cache) DefaultTTL() time.Duration {
 	return c.ttl
 }
+
+// Ping checks Redis connectivity.
+func (c *Cache) Ping(ctx context.Context) error {
+	return c.client.Ping(ctx).Err()
+}

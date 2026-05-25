@@ -48,7 +48,10 @@ func main() {
 	proc := processor.NewProcessor()
 
 	mux := http.NewServeMux()
-	mux.Handle("GET /health", handler.NewHealthHandler(startTime))
+	mux.Handle("GET /health", handler.NewHealthHandler(startTime, map[string]handler.Pinger{
+		"redis": imgCache,
+		"minio": store,
+	}))
 	mux.Handle("POST /upload", handler.NewUploadHandler(store))
 	mux.Handle("GET /img/{id}", handler.NewImageHandler(store, imgCache, proc))
 	mux.Handle("GET /metrics", promhttp.Handler())
