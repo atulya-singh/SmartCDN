@@ -22,7 +22,7 @@ type Storage struct {
 func NewStorage(ctx context.Context, cfg *config.Config) (*Storage, error) {
 	client, err := minio.New(cfg.MinioEndpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.MinioAccessKey, cfg.MinioSecretKey, ""),
-		Secure: false,
+		Secure: cfg.MinioSecure,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create minio client: %w", err)
