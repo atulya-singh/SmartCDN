@@ -1,4 +1,4 @@
-FROM golang:1.25-bookworm AS builder
+FROM golang:1.22-bookworm AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libvips-dev \
@@ -15,10 +15,12 @@ FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libvips42 \
     ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -r -s /bin/false appuser
 
 COPY --from=builder /app /app
 
+USER appuser
 EXPOSE 8080
 
 ENTRYPOINT ["/app"]
