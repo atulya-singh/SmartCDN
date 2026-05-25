@@ -308,7 +308,7 @@ func TestIntegration_HealthCheck(t *testing.T) {
 		t.Errorf("expected 200, got %d", resp.StatusCode)
 	}
 
-	var result map[string]string
+	var result map[string]any
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		t.Fatalf("failed to decode health response: %v", err)
 	}
