@@ -2,15 +2,19 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
-
-	"github.com/at/smartcdn/internal/storage"
 )
 
 const maxUploadSize = 10 << 20 // 10MB
+
+// Uploader stores original image files.
+type Uploader interface {
+	Upload(ctx context.Context, filename string, data io.Reader, contentType string) (string, error)
+}
 
 // image format magic bytes
 var imageMagic = []struct {
@@ -23,10 +27,10 @@ var imageMagic = []struct {
 }
 
 type UploadHandler struct {
-	store *storage.Storage
+	store Uploader
 }
 
-func NewUploadHandler(store *storage.Storage) *UploadHandler {
+func NewUploadHandler(store Uploader) *UploadHandler {
 	return &UploadHandler{store: store}
 }
 
@@ -52,7 +56,7 @@ func (h *UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contentType := detectImageType(data)
+	contentType := DetectImageType(data)
 	if contentType == "" {
 		http.Error(w, "unsupported file type: must be JPEG, PNG, or WebP", http.StatusUnsupportedMediaType)
 		return
@@ -73,7 +77,9 @@ func (h *UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func detectImageType(data []byte) string {
+// DetectImageType returns the MIME type by inspecting magic bytes.
+// Returns empty string if the format is not JPEG, PNG, or WebP.
+func DetectImageType(data []byte) string {
 	for _, m := range imageMagic {
 		if bytes.HasPrefix(data, m.prefix) {
 			return m.mime

@@ -14,18 +14,34 @@ import (
 	"github.com/at/smartcdn/internal/device"
 	"github.com/at/smartcdn/internal/middleware"
 	"github.com/at/smartcdn/internal/processor"
-	"github.com/at/smartcdn/internal/storage"
 )
+
+// ImageStore retrieves original images from object storage.
+type ImageStore interface {
+	Download(ctx context.Context, imageID string) ([]byte, string, error)
+}
+
+// ImageCache caches and retrieves processed image variants.
+type ImageCache interface {
+	Get(ctx context.Context, key string) ([]byte, error)
+	Set(ctx context.Context, key string, data []byte, ttl time.Duration) error
+	DefaultTTL() time.Duration
+}
+
+// ImageTransformer resizes, compresses, and converts images.
+type ImageTransformer interface {
+	Transform(imageData []byte, opts processor.TransformOptions) ([]byte, error)
+}
 
 // ImageHandler serves optimized images based on device classification.
 type ImageHandler struct {
-	store *storage.Storage
-	cache *cache.Cache
-	proc  *processor.Processor
+	store ImageStore
+	cache ImageCache
+	proc  ImageTransformer
 }
 
 // NewImageHandler creates a new ImageHandler with the given dependencies.
-func NewImageHandler(store *storage.Storage, c *cache.Cache, proc *processor.Processor) *ImageHandler {
+func NewImageHandler(store ImageStore, c ImageCache, proc ImageTransformer) *ImageHandler {
 	return &ImageHandler{
 		store: store,
 		cache: c,
