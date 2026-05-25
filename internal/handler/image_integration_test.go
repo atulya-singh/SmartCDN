@@ -260,17 +260,23 @@ func TestIntegration_CacheHitOnSecondRequest(t *testing.T) {
 		t.Errorf("first request: X-SmartCDN-Cache = %q, want MISS", resp1.Header.Get("X-SmartCDN-Cache"))
 	}
 
-	// Small delay to let async cache set complete
-	time.Sleep(200 * time.Millisecond)
-
-	// Second request — should be HIT
-	resp2 := fetchImage(t, srv.URL, imageID, ua)
-	body2, _ := io.ReadAll(resp2.Body)
-	resp2.Body.Close()
-
-	if resp2.Header.Get("X-SmartCDN-Cache") != "HIT" {
-		t.Errorf("second request: X-SmartCDN-Cache = %q, want HIT", resp2.Header.Get("X-SmartCDN-Cache"))
+	// Poll for cache HIT — the async goroutine that writes the cache may take a moment.
+	var resp2 *http.Response
+	for i := 0; i < 20; i++ {
+		r := fetchImage(t, srv.URL, imageID, ua)
+		if r.Header.Get("X-SmartCDN-Cache") == "HIT" {
+			resp2 = r
+			break
+		}
+		io.Copy(io.Discard, r.Body)
+		r.Body.Close()
+		time.Sleep(50 * time.Millisecond)
 	}
+	if resp2 == nil {
+		t.Fatal("cache HIT not observed after 1s; async cache write may have failed")
+	}
+	defer resp2.Body.Close()
+	body2, _ := io.ReadAll(resp2.Body)
 
 	// Both responses should return the same image data
 	if !bytes.Equal(body1, body2) {
