@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"log/slog"
 	"net/http"
 
@@ -10,10 +12,14 @@ import (
 
 const maxUploadSize = 10 << 20 // 10MB
 
-var allowedContentTypes = map[string]bool{
-	"image/jpeg": true,
-	"image/png":  true,
-	"image/webp": true,
+// image format magic bytes
+var imageMagic = []struct {
+	mime   string
+	prefix []byte
+}{
+	{"image/jpeg", []byte{0xFF, 0xD8, 0xFF}},
+	{"image/png", []byte{0x89, 0x50, 0x4E, 0x47}},
+	{"image/webp", []byte{0x52, 0x49, 0x46, 0x46}}, // "RIFF" — WebP container
 }
 
 type UploadHandler struct {
@@ -39,13 +45,20 @@ func (h *UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	contentType := header.Header.Get("Content-Type")
-	if !allowedContentTypes[contentType] {
-		http.Error(w, "unsupported content type: must be image/jpeg, image/png, or image/webp", http.StatusUnsupportedMediaType)
+	// Read the full body so we can sniff magic bytes and re-present to storage.
+	data, err := io.ReadAll(file)
+	if err != nil {
+		http.Error(w, "failed to read file", http.StatusBadRequest)
 		return
 	}
 
-	id, err := h.store.Upload(r.Context(), header.Filename, file, contentType)
+	contentType := detectImageType(data)
+	if contentType == "" {
+		http.Error(w, "unsupported file type: must be JPEG, PNG, or WebP", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	id, err := h.store.Upload(r.Context(), header.Filename, bytes.NewReader(data), contentType)
 	if err != nil {
 		slog.Error("upload failed", "error", err)
 		http.Error(w, "failed to store image", http.StatusInternalServerError)
@@ -58,4 +71,13 @@ func (h *UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"id":   id,
 		"size": header.Size,
 	})
+}
+
+func detectImageType(data []byte) string {
+	for _, m := range imageMagic {
+		if bytes.HasPrefix(data, m.prefix) {
+			return m.mime
+		}
+	}
+	return ""
 }
