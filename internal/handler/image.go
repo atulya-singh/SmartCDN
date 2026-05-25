@@ -12,6 +12,7 @@ import (
 
 	"github.com/at/smartcdn/internal/cache"
 	"github.com/at/smartcdn/internal/device"
+	"github.com/at/smartcdn/internal/middleware"
 	"github.com/at/smartcdn/internal/processor"
 	"github.com/at/smartcdn/internal/storage"
 )
@@ -84,11 +85,13 @@ func (h *ImageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Transform
+	procStart := time.Now()
 	processed, err := h.proc.Transform(original, processor.TransformOptions{
 		Width:   profile.MaxWidth,
 		Quality: profile.Quality,
 		Format:  format,
 	})
+	middleware.RecordProcessingDuration(time.Since(procStart))
 	if err != nil {
 		slog.Error("image processing failed", "imageID", imageID, "error", err)
 		http.Error(w, "failed to process image", http.StatusInternalServerError)
