@@ -22,11 +22,7 @@ func TestTransform_ResizeToWebP(t *testing.T) {
 	}
 
 	proc := NewProcessor()
-	output, err := proc.Transform(input, TransformOptions{
-		Width:   50,
-		Quality: 75,
-		Format:  "webp",
-	})
+	output, err := proc.Transform(input, 50, 75, "webp")
 	if err != nil {
 		t.Fatalf("Transform failed: %v", err)
 	}
@@ -56,11 +52,7 @@ func TestTransform_NoUpscale(t *testing.T) {
 
 	proc := NewProcessor()
 	// Request width larger than original — should not upscale
-	output, err := proc.Transform(input, TransformOptions{
-		Width:   500,
-		Quality: 90,
-		Format:  "jpeg",
-	})
+	output, err := proc.Transform(input, 500, 90, "jpeg")
 	if err != nil {
 		t.Fatalf("Transform failed: %v", err)
 	}
@@ -75,11 +67,7 @@ func TestTransform_ZeroInput(t *testing.T) {
 		t.Skip("skipping: requires libvips")
 	}
 	proc := NewProcessor()
-	_, err := proc.Transform([]byte{}, TransformOptions{
-		Width:   100,
-		Quality: 80,
-		Format:  "jpeg",
-	})
+	_, err := proc.Transform([]byte{}, 100, 80, "jpeg")
 	if err == nil {
 		t.Error("expected error for zero-byte input")
 	}
@@ -90,11 +78,7 @@ func TestTransform_UnsupportedFormat(t *testing.T) {
 		t.Skip("skipping: requires libvips")
 	}
 	proc := NewProcessor()
-	_, err := proc.Transform([]byte("not an image"), TransformOptions{
-		Width:   100,
-		Quality: 80,
-		Format:  "jpeg",
-	})
+	_, err := proc.Transform([]byte("not an image"), 100, 80, "jpeg")
 	if err == nil {
 		t.Error("expected error for unsupported input format")
 	}

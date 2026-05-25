@@ -6,13 +6,6 @@ import (
 	"github.com/h2non/bimg"
 )
 
-// TransformOptions specifies how an image should be processed.
-type TransformOptions struct {
-	Width   int
-	Quality int
-	Format  string // "webp" or "jpeg"
-}
-
 // Processor handles image transformation via libvips/bimg.
 type Processor struct{}
 
@@ -21,8 +14,9 @@ func NewProcessor() *Processor {
 	return &Processor{}
 }
 
-// Transform resizes, compresses, and converts an image according to the given options.
-func (p *Processor) Transform(imageData []byte, opts TransformOptions) ([]byte, error) {
+// Transform resizes, compresses, and converts an image.
+// width=0 means no resize. format must be "webp" or "jpeg".
+func (p *Processor) Transform(imageData []byte, width, quality int, format string) ([]byte, error) {
 	if len(imageData) == 0 {
 		return nil, fmt.Errorf("transform: zero-byte input")
 	}
@@ -39,13 +33,13 @@ func (p *Processor) Transform(imageData []byte, opts TransformOptions) ([]byte, 
 	}
 
 	bimgOpts := bimg.Options{
-		Quality: opts.Quality,
-		Type:    toBimgType(opts.Format),
+		Quality: quality,
+		Type:    toBimgType(format),
 	}
 
 	// Only resize if the image is wider than the target and target > 0
-	if opts.Width > 0 && size.Width > opts.Width {
-		bimgOpts.Width = opts.Width
+	if width > 0 && size.Width > width {
+		bimgOpts.Width = width
 	}
 
 	out, err := img.Process(bimgOpts)

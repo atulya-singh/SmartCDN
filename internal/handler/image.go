@@ -13,7 +13,6 @@ import (
 	"github.com/at/smartcdn/internal/cache"
 	"github.com/at/smartcdn/internal/device"
 	"github.com/at/smartcdn/internal/middleware"
-	"github.com/at/smartcdn/internal/processor"
 )
 
 // ImageStore retrieves original images from object storage.
@@ -30,7 +29,7 @@ type ImageCache interface {
 
 // ImageTransformer resizes, compresses, and converts images.
 type ImageTransformer interface {
-	Transform(imageData []byte, opts processor.TransformOptions) ([]byte, error)
+	Transform(imageData []byte, width, quality int, format string) ([]byte, error)
 }
 
 // ImageHandler serves optimized images based on device classification.
@@ -103,11 +102,7 @@ func (h *ImageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Transform
 	procStart := time.Now()
-	processed, err := h.proc.Transform(original, processor.TransformOptions{
-		Width:   profile.MaxWidth,
-		Quality: profile.Quality,
-		Format:  format,
-	})
+	processed, err := h.proc.Transform(original, profile.MaxWidth, profile.Quality, format)
 	middleware.RecordProcessingDuration(time.Since(procStart))
 	if err != nil {
 		slog.Error("image processing failed", "imageID", imageID, "error", err)

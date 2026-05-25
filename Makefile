@@ -8,13 +8,13 @@ build:
 run: build
 	./bin/server
 
-# Run all tests (short mode skips integration tests)
+# Run all tests including integration (requires MinIO + Redis + libvips)
 test:
-	go test ./... -v
+	go test -tags integration ./... -v
 
 # Run only unit tests (no external dependencies needed)
 test-unit:
-	go test ./... -short -v
+	go test ./... -v
 
 # Lint: go vet + format check
 lint: vet fmt

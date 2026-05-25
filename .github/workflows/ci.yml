@@ -40,7 +40,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libvips-dev
 
       - name: Run unit tests
-        run: go test ./... -short -v -timeout 60s
+        run: go test ./... -v -timeout 60s
 
   integration-tests:
     name: Integration Tests
@@ -81,7 +81,7 @@ jobs:
           MINIO_ACCESS_KEY: minioadmin
           MINIO_SECRET_KEY: minioadmin
           MINIO_BUCKET: smartcdn-test
-        run: go test ./... -v -timeout 120s
+        run: go test -tags integration ./... -v -timeout 120s
 
   docker-build:
     name: Docker Build
