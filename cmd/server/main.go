@@ -52,11 +52,13 @@ func main() {
 		"redis": imgCache,
 		"minio": store,
 	}))
-	mux.Handle("POST /upload", handler.NewUploadHandler(store))
+	rl := middleware.NewRateLimiter(cfg.RateLimitRPS, cfg.RateLimitBurst)
+
+	mux.Handle("POST /upload", middleware.APIKeyAuth(cfg.UploadAPIKey, handler.NewUploadHandler(store)))
 	mux.Handle("GET /img/{id}", handler.NewImageHandler(store, imgCache, proc))
 	mux.Handle("GET /metrics", promhttp.Handler())
 
-	wrapped := middleware.Logging(middleware.Metrics(mux))
+	wrapped := middleware.Logging(middleware.Metrics(rl.Limit(mux)))
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),

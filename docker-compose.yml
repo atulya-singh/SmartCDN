@@ -72,6 +72,9 @@ services:
       REDIS_PASSWORD: ""
       CACHE_TTL_SECONDS: 86400
       LOG_LEVEL: info
+      UPLOAD_API_KEY: ""
+      RATE_LIMIT_RPS: 100
+      RATE_LIMIT_BURST: 200
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 15s

@@ -16,6 +16,9 @@ type Config struct {
 	RedisPassword   string
 	CacheTTLSeconds int
 	LogLevel        string
+	UploadAPIKey    string
+	RateLimitRPS    int
+	RateLimitBurst  int
 }
 
 func Load() *Config {
@@ -30,6 +33,9 @@ func Load() *Config {
 		RedisPassword:   getEnv("REDIS_PASSWORD", ""),
 		CacheTTLSeconds: getEnvInt("CACHE_TTL_SECONDS", 86400),
 		LogLevel:        getEnv("LOG_LEVEL", "info"),
+		UploadAPIKey:    getEnv("UPLOAD_API_KEY", ""),
+		RateLimitRPS:    getEnvInt("RATE_LIMIT_RPS", 100),
+		RateLimitBurst:  getEnvInt("RATE_LIMIT_BURST", 200),
 	}
 }
 
