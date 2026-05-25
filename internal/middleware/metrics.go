@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -36,6 +37,17 @@ var (
 		Name: "smartcdn_bytes_served_total",
 		Help: "Total bytes of optimized images served.",
 	})
+
+	cacheHitRatio = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "smartcdn_cache_hit_ratio",
+		Help: "Cache hit ratio (0.0–1.0) computed over all image requests.",
+	})
+)
+
+// running totals used to compute the cache hit ratio gauge.
+var (
+	cacheHitCount  atomic.Int64
+	cacheMissCount atomic.Int64
 )
 
 // RecordProcessingDuration records the duration of an image processing operation.
@@ -69,6 +81,18 @@ func Metrics(next http.Handler) http.Handler {
 
 		if deviceClass != "" && cacheStatus != "" {
 			requestsTotal.WithLabelValues(deviceClass, cacheStatus, format).Inc()
+
+			// Update cache hit ratio gauge.
+			if cacheStatus == "HIT" {
+				cacheHitCount.Add(1)
+			} else {
+				cacheMissCount.Add(1)
+			}
+			hits := cacheHitCount.Load()
+			total := hits + cacheMissCount.Load()
+			if total > 0 {
+				cacheHitRatio.Set(float64(hits) / float64(total))
+			}
 		}
 
 		// Track served bytes
