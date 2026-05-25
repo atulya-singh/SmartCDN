@@ -69,6 +69,7 @@ func (h *ImageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-SmartCDN-Cache", "HIT")
 		w.Header().Set("X-SmartCDN-Optimized-Size", strconv.Itoa(len(cached)))
 		w.Header().Set("Content-Type", contentTypeForFormat(format))
+		w.Header().Set("Content-Length", strconv.Itoa(len(cached)))
 		w.Write(cached)
 		return
 	}
@@ -120,6 +121,7 @@ func (h *ImageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-SmartCDN-Optimized-Size", strconv.Itoa(optimizedSize))
 	w.Header().Set("X-SmartCDN-Savings", fmt.Sprintf("%.1f%%", savings))
 	w.Header().Set("Content-Type", contentTypeForFormat(format))
+	w.Header().Set("Content-Length", strconv.Itoa(optimizedSize))
 	w.Write(processed)
 }
 
