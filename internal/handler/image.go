@@ -68,7 +68,7 @@ func (h *ImageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// ETag based on cache key hash
 	etag := fmt.Sprintf(`"%x"`, sha256.Sum256([]byte(key)))
 	w.Header().Set("ETag", etag)
-	w.Header().Set("Cache-Control", "public, max-age=86400")
+	w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", int(h.cache.DefaultTTL().Seconds())))
 
 	// Check If-None-Match
 	if r.Header.Get("If-None-Match") == etag {

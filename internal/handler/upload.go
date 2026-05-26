@@ -16,15 +16,20 @@ type Uploader interface {
 	Upload(ctx context.Context, filename string, data io.Reader, contentType string) (string, error)
 }
 
-// image format magic bytes
+// image format magic bytes for JPEG and PNG
 var imageMagic = []struct {
 	mime   string
 	prefix []byte
 }{
 	{"image/jpeg", []byte{0xFF, 0xD8, 0xFF}},
 	{"image/png", []byte{0x89, 0x50, 0x4E, 0x47}},
-	{"image/webp", []byte{0x52, 0x49, 0x46, 0x46}}, // "RIFF" — WebP container
 }
+
+// webpRIFF is the "RIFF" marker; webpMarker is "WEBP" at bytes 8-11.
+var (
+	webpRIFF   = []byte{0x52, 0x49, 0x46, 0x46}
+	webpMarker = []byte{0x57, 0x45, 0x42, 0x50}
+)
 
 type UploadHandler struct {
 	store Uploader
@@ -84,6 +89,12 @@ func DetectImageType(data []byte) string {
 		if bytes.HasPrefix(data, m.prefix) {
 			return m.mime
 		}
+	}
+	// WebP: "RIFF" at bytes 0-3 AND "WEBP" at bytes 8-11
+	if len(data) >= 12 &&
+		bytes.Equal(data[0:4], webpRIFF) &&
+		bytes.Equal(data[8:12], webpMarker) {
+		return "image/webp"
 	}
 	return ""
 }
