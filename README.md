@@ -4,21 +4,34 @@ A production-grade image CDN that dynamically resizes, compresses, and transcode
 
 ## Measured Performance
 
-Numbers from benchmarking against the live stack with real JPEG images (1920×1080, 1200×800, 800×600).
+Benchmarked against the live stack with real JPEG images ranging from 400×300 to 4000×3000 (5 source sizes × 4 device classes = 20 combinations).
 
 ### Bandwidth Savings by Device Class
-Source: 1920×1080 JPEG, 164,973 bytes original
 
-| Device Class | Max Width | Served (bytes) | Savings |
+Savings depend on how much larger the source image is than the device's target width. Numbers below are measured ranges across the 5 source sizes tested.
+
+| Device Class | Target Width | Savings range | Typical (1280–2560px source) |
 |---|---|---|---|
-| `mobile-low` | 480px | 7,458 | **95.5%** |
-| `mobile-high` | 768px | 21,632 | **86.9%** |
-| `tablet` | 1024px | 45,988 | **72.1%** |
-| `desktop` | 1920px | 163,564 | 0.9% (format only) |
+| `mobile-low` | 480px | 46%–98% | **87–97%** |
+| `mobile-high` | 768px | 37%–97% | **71–92%** |
+| `tablet` | 1024px | 25%–94% | **51–84%** |
+| `desktop` | 1920px | 8%–74% | **16–37%** |
 
-### WebP vs JPEG (same device class, different Accept header)
+> If the source image is already smaller than the device's target width, SmartCDN does not upscale — savings come from format conversion only (typically 20–50% via WebP).
 
-| Source Image | WebP | JPEG | WebP advantage |
+#### Full data: savings by source size × device class
+
+| Source | Dimensions | `mobile-low` | `mobile-high` | `tablet` | `desktop` |
+|---|---|---|---|---|---|
+| 4K | 4000×3000 | 98.5% | 96.8% | 94.3% | 73.5% |
+| 2K | 2560×1440 | 96.9% | 92.1% | 83.5% | 36.8% |
+| 720p | 1280×720 | 86.8% | 71.5% | 50.8% | 16.2% |
+| 640px | 640×480 | 79.0% | 65.8% | 57.2% | 45.7% |
+| 400px | 400×300 | 45.6% | 36.7% | 25.0% | 7.9% |
+
+### WebP vs JPEG (same device, different Accept header)
+
+| Source | WebP (mobile-high) | JPEG (fallback) | WebP advantage |
 |---|---|---|---|
 | Full HD 1920×1080 | 21,632 B | 54,161 B | **70% smaller** |
 | Medium 1200×800 | 30,192 B | 81,026 B | **70% smaller** |
@@ -29,13 +42,13 @@ Source: 1920×1080 JPEG, 164,973 bytes original
 | Metric | Value |
 |---|---|
 | Cache HIT latency (avg) | **~1ms** |
-| Cache MISS latency (avg) | **38–48ms** (MinIO fetch + libvips) |
+| Cache MISS latency (avg) | **38–48ms** (object storage fetch + libvips) |
 | P50 request latency | **2.6ms** |
 | P99 request latency | **49.4ms** |
 | Throughput (20 concurrency, warm cache) | **~707 req/s** |
 | Cache hit ratio (steady state) | **96.1%** |
 
-> 96% of bandwidth is served directly from Redis. MinIO is only hit on first-ever request per image+device+format combination.
+> Latency numbers are localhost-to-localhost. In production add network RTT (typically 5–50ms). Throughput scales horizontally — multiple instances share the same Redis cache. Bandwidth savings are network-independent.
 
 ## Architecture
 
